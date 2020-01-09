@@ -6,6 +6,8 @@
 #include <pluginlib/class_list_macros.h>
 #include <string>
 
+#include <fstream>
+
 namespace ensenso_camera
 {
 void Nodelet::onInit()
@@ -134,6 +136,25 @@ void Nodelet::onInit()
     if (!camera->loadSettings(settingsFile, true))
     {
       NODELET_ERROR("Failed to load the camera settings. Shutting down.");
+      nxLibFinalize();
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  std::string objectsFile;
+  if (nhLocal.getParam("objects", objectsFile) && !objectsFile.empty())
+  {
+    NODELET_DEBUG("Loading objects settings...");
+    std::ifstream file(objectsFile);
+    if (file.is_open() && file.rdbuf())
+    {
+      std::stringstream buffer;
+      buffer << file.rdbuf();
+      std::string const& objectsJson = buffer.str();
+
+      NxLibItem()[itmObjects].setJson(objectsJson);
+    } else {
+      NODELET_ERROR("Failed to load the objects from file. Shutting down.");
       nxLibFinalize();
       exit(EXIT_FAILURE);
     }
